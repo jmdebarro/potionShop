@@ -18,6 +18,10 @@ class PotionInventory(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
     """ """
+    green_potions = potions_delivered[0].quantity
+    sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(sql_to_execute))
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     return "OK"
@@ -33,16 +37,22 @@ def get_bottle_plan():
     # Expressed in integers from 1 to 100 that must sum up to 100.
 
     # Initial logic: bottle all barrels into red potions.
+    sql_to_execute = "SELECT num_green_ml FROM global_inventory"
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(sql_to_execute))
+        green_ml = result.fetchall()[0][0]
+    # Break green ml into potion and leftover
+    green_potions = green_ml // 100
 
+    sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {green_ml - green_potions * 100}"
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(sql_to_execute))
     return [
             {
-                "potion_type": [100, 0, 0, 0],
-                "quantity": 5,
+                "potion_type": [0, 100, 0, 0],
+                "quantity": green_potions,
             }
         ]
-
-with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute))
 
 if __name__ == "__main__":
     print(get_bottle_plan())

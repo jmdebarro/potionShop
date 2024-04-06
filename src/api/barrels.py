@@ -21,7 +21,7 @@ class Barrel(BaseModel):
 
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
-    """ """
+    """ See """
     sql_to_execute = "SELECT * FROM global_inventory"
     barrels_bought = []
     with db.engine.begin() as connection:
@@ -30,13 +30,11 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         current_ml = result[0][2]
         # Iterates through barrels you want to purchase from "/plan"
         for barrel in barrels_delivered:
-            # If barrel price is below gold available, buy barrel
-            if (barrel.price) < current_gold:
-                barrels_bought.append(barrel)
-                current_gold -= barrel.price
-                current_ml += barrel.ml_per_barrel
-                sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {current_ml}, gold = {current_gold}"
-                update = connection.execute(sqlalchemy.text(sql_to_execute))
+            barrels_bought.append(barrel)
+            current_gold -= barrel.price
+            current_ml += barrel.ml_per_barrel
+            sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {current_ml}, gold = {current_gold}"
+            update = connection.execute(sqlalchemy.text(sql_to_execute))
 
     print(f"barrels delievered: {barrels_bought} order_id: {order_id}")
 
@@ -45,7 +43,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 # Gets called once a day
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
-    """ """
+    """ Send request for what you want """
     print(wholesale_catalog)
     num_green_potion = 0
     sql_to_execute = "SELECT * FROM global_inventory"

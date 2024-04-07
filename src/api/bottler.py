@@ -19,21 +19,24 @@ class PotionInventory(BaseModel):
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
     """ """
     green_potions = potions_delivered[0].quantity
-    sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute))
+    if green_potions > 0:
+        sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
+        with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(sql_to_execute))
 
-        # get green ml
-        sql_to_execute = "SELECT num_green_ml FROM global_inventory"
-        result = connection.execute(sqlalchemy.text(sql_to_execute))
-        green_ml = result.fetchall()[0][0]
-        leftover_green = green_ml - potions_delivered[0].quantity * 100
-        result = connection.execute(sqlalchemy.text(sql_to_execute))
+            # get green ml
+            sql_to_execute = "SELECT num_green_ml FROM global_inventory"
+            result = connection.execute(sqlalchemy.text(sql_to_execute))
+            green_ml = result.fetchall()[0][0]
+            leftover_green = green_ml - potions_delivered[0].quantity * 100
+            result = connection.execute(sqlalchemy.text(sql_to_execute))
 
-        sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {leftover_green}"
-        result = connection.execute(sqlalchemy.text(sql_to_execute))
-        
-    print(f"potions delievered: {potions_delivered} order_id: {order_id}")
+            sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {leftover_green}"
+            result = connection.execute(sqlalchemy.text(sql_to_execute))
+            
+        print(f"potions delievered: {potions_delivered} order_id: {order_id}")
+    else:
+        print("No Potions delivered")
 
     return "OK"
 

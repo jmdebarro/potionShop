@@ -5,6 +5,12 @@ from pydantic import BaseModel
 from src.api import auth
 from enum import Enum
 
+# Cart id variable that is incremented with every call
+cart_id = 0
+
+## dictionary for cartid and items in session
+carts = {}
+
 router = APIRouter(
     prefix="/carts",
     tags=["cart"],
@@ -87,17 +93,18 @@ def post_visits(visit_id: int, customers: list[Customer]):
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
-    return {"cart_id": 1}
+    cart_id = cart_id + 1
+    return {"cart_id": cart_id}
 
 
 class CartItem(BaseModel):
     quantity: int
 
-
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
-
+    carts[cart_id] = (item_sku, cart_item.quantity)
+    
     return "OK"
 
 
@@ -107,7 +114,26 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
+    potions_bought = carts[cart_id][1]
+    gold_paid = potions_bought[cart_id][1] * 50
+    sql_to_execute = "SELECT gold FROM global_inventory"
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
+        current_gold = result[0][0]
+        current_gold = current_gold - gold_paid
 
-    return {"total_potions_bought": 1, "total_gold_paid": 50}
+    sql_to_execute = f"UPDATE global_inventory SET gold = {current_gold}"
+    with db.engine.begin() as connection:
+        update = connection.execute(sqlalchemy.text(sql_to_execute))
+
+    sql_to_execute = f"SELECT num_green_potions FROM global_inventory"    
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
+        green_potions = result[0][0]
+        green_potions = green_potions - potions_bought
+    sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(sql_to_execute))
+    return {"total_potions_bought": potions_bought, "total_gold_paid": gold_paid}
 
 

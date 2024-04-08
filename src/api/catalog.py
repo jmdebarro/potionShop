@@ -24,9 +24,12 @@ def get_catalog():
                     "sku": "GREEN_FANTASY_POTIONS",
                     "name": "green potion",
                     "quantity": num_green_potion,
-                    "price": 60,
+                    "price": 50,
                     "potion_type": [0, 100, 0, 0],
                 }
             ]
     return []
+
+# Create cart, add items to cart
+# checkout = -potions, +gold
 

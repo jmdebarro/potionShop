@@ -22,21 +22,25 @@ class Barrel(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ See """
-    sql_to_execute = "SELECT * FROM global_inventory"
-    barrels_bought = []
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
-        current_gold = result[0][3]
-        current_ml = result[0][2]
-        # Iterates through barrels you want to purchase from "/plan"
-        for barrel in barrels_delivered:
-            barrels_bought.append(barrel)
-            current_gold -= barrel.price
-            current_ml += barrel.ml_per_barrel
-            sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {current_ml}, gold = {current_gold}"
-            update = connection.execute(sqlalchemy.text(sql_to_execute))
+    if len(barrels_delivered) == 0:
+        print("No barrels delivered")
+        
+    else:
+        sql_to_execute = "SELECT * FROM global_inventory"
+        barrels_bought = []
+        with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
+            current_gold = result[0][3]
+            current_ml = result[0][2]
+            # Iterates through barrels you want to purchase from "/plan"
+            for barrel in barrels_delivered:
+                barrels_bought.append(barrel)
+                current_gold -= barrel.price
+                current_ml += barrel.ml_per_barrel
+                sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {current_ml}, gold = {current_gold}"
+                update = connection.execute(sqlalchemy.text(sql_to_execute))
 
-    print(f"barrels delievered: {barrels_bought} order_id: {order_id}")
+        print(f"barrels delievered: {barrels_bought} order_id: {order_id}")
 
     return "OK"
 

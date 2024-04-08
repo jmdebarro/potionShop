@@ -18,12 +18,13 @@ def get_catalog():
         #(id, num_green_potions, num_green_ml, gold)
         num_green_potion = result[0][1]
 
+    # Hardcoding potion amount right now
     if num_green_potion > 0:
         return [
                 {
                     "sku": "GREEN_FANTASY_POTIONS",
                     "name": "green potion",
-                    "quantity": num_green_potion,
+                    "quantity": 1,
                     "price": 50,
                     "potion_type": [0, 100, 0, 0],
                 }

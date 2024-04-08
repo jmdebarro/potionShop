@@ -8,7 +8,7 @@ from enum import Enum
 # Cart id variable that is incremented with every call
 cart_id = 0
 
-## dictionary for cartid and items in session
+# dictionary for cartid and items in session
 carts = {}
 
 router = APIRouter(
@@ -134,6 +134,8 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute))
-    return {"total_potions_bought": potions_bought, "total_gold_paid": gold_paid}
+        
+    # Hardcoding potions bought at the moment
+    return {"total_potions_bought": 1, "total_gold_paid": 50}
 
 

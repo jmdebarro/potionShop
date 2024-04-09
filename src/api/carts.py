@@ -136,6 +136,6 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         result = connection.execute(sqlalchemy.text(sql_to_execute))
         
     # Hardcoding potions bought at the moment
-    return {"total_potions_bought": 1, "total_gold_paid": 50}
+    return {"total_potions_bought": 1, "total_gold_paid": 30}
 
 

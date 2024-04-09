@@ -93,8 +93,8 @@ def post_visits(visit_id: int, customers: list[Customer]):
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
-    cart_id = cart_id + 1
-    return {"cart_id": cart_id}
+    # cart_id = cart_id + 1
+    return {"cart_id": 1}
 
 
 class CartItem(BaseModel):
@@ -103,7 +103,7 @@ class CartItem(BaseModel):
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
-    carts[cart_id] = (item_sku, cart_item.quantity)
+    # carts[cart_id] = (item_sku, cart_item.quantity)
     
     return "OK"
 
@@ -114,13 +114,14 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
-    potions_bought = carts[cart_id][1]
-    gold_paid = potions_bought[cart_id][1] * 50
+    # carts[key] = (sku, quantity)
+    # potions_bought = carts[cart_id][1]
+    # gold_paid = potions_bought[cart_id][1] * 30
     sql_to_execute = "SELECT gold FROM global_inventory"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
         current_gold = result[0][0]
-        current_gold = current_gold - gold_paid
+        current_gold = current_gold + 30
 
     sql_to_execute = f"UPDATE global_inventory SET gold = {current_gold}"
     with db.engine.begin() as connection:
@@ -130,7 +131,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
         green_potions = result[0][0]
-        green_potions = green_potions - potions_bought
+        green_potions = green_potions - 1
     sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute))

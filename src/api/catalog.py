@@ -10,7 +10,6 @@ def get_catalog():
     """
     Each unique item combination must have only a single price.
     """
-    num_green_potion = 0
     sql_to_execute = "SELECT * FROM potions_table WHERE quantity > 0"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
@@ -23,7 +22,8 @@ def offerPotions(potions):
     offers, i = 0, 0
     catalogList = []
     length = len(potions)
-    while offers < 6 and i < len(potions):
+
+    while offers < 6 and i < length:
         name = " ".join(potions[i].sku.split("_")).lower()
         catalogList.append({
                     "sku": potions[i].sku,

@@ -19,57 +19,172 @@ class Barrel(BaseModel):
 
     quantity: int
 
+
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
-    """ See """
+    """Sets barrel ml and gold in db"""
     if len(barrels_delivered) == 0:
         print("No barrels delivered")
         
     else:
-        sql_to_execute = "SELECT * FROM global_inventory"
-        barrels_bought = []
-        with db.engine.begin() as connection:
-            result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-            current_gold = result.gold
-            green_current_ml = result.num_green_ml
-            # Iterates through barrels you want to purchase from "/plan"
-            for barrel in barrels_delivered:
-                barrels_bought.append(barrel)
-                current_gold -= barrel.price
-                green_current_ml += barrel.ml_per_barrel
-                sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {green_current_ml}, gold = {current_gold}"
-                update = connection.execute(sqlalchemy.text(sql_to_execute))
+        gold, red, green, blue = getMl()
+        buyBarrels(gold, red, green, blue, barrels_delivered)
 
-        print(f"barrels delievered: {barrels_bought} order_id: {order_id}")
+        print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
 
     return "OK"
 
-# Gets called once a day
-@router.post("/plan")
-def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
-    """ Send request for what you want """
-    print(wholesale_catalog)
 
-    check_green = False
-    # Check if green barrel exists
-    for barrel in wholesale_catalog:
-        if barrel.sku == 'SMALL_GREEN_BARREL':
-            check_green = True
-    num_green_potion = 0
+def getMl():
+    '''Returns current ml for every color and gold'''
     sql_to_execute = "SELECT * FROM global_inventory"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        #(id, num_green_potions, num_green_ml, gold)
-        num_green_potion = result.num_green_potions
         gold = result.gold
-    # Write SQL code to check how many barrels you want to buy
-    if num_green_potion < 10 and gold >= 100 and check_green:
-        return [
-            {
-                "sku": "SMALL_GREEN_BARREL",
-                "quantity": 1,
-            }
-        ]
-    else:
-        return []
+        green_current_ml = result.num_green_ml
+        red_current_ml = result.num_red_ml
+        blue_current_ml = result.num_red_ml
+    return gold, red_current_ml, green_current_ml,blue_current_ml
 
+def buyBarrels(gold, red, green, blue, barrel_list):
+    '''Handles updating db ml and gold'''
+    with db.engine.begin() as connection:
+        for barrel in barrel_list:
+            gold -= barrel.price
+            if barrel.potion_type[0] == 1:
+                # red barrel
+                red += barrel.ml_per_barrel
+            elif barrel.potion_type[1] == 1:
+                # green barrel
+                green += barrel.ml_per_barrel
+            else:
+                # blue barrel
+                blue += barrel.ml_per_barrel
+        sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {green}, gold = {gold}, num_red_ml = {red}, num_blue_ml = {blue}"
+        update = connection.execute(sqlalchemy.text(sql_to_execute))
+
+
+# Gets called every other tick
+@router.post("/plan")
+def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
+    """ Send request for what you want """
+    wholesale_catalog = wholesale_catalog[::-1]
+    print(wholesale_catalog)
+    colors_needed = checkStorage()
+
+    return barrelsWanted(wholesale_catalog, colors_needed)
+
+    
+def checkStorage():
+    '''Checks what barrels we need'''
+    sql_to_execute = "SELECT red, green, blue, dark FROM potions_table WHERE quantity < 6"
+    with db.engine.begin() as connection:
+        potions = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
+        colors = [0, 0, 0, 0]      
+        for potion in potions:
+            colors[0] += potion.red
+            colors[1] += potion.green
+            colors[2] += potion.blue
+            colors[3] += potion.dark
+    return colors
+
+
+def barrelsWanted(catalog, types):
+    '''Code to check for barrels and if there are sufficient funds'''
+    reqBarrels = []
+    if sum(types) == 0:
+        return reqBarrels
+    
+    sql_to_execute = "SELECT gold FROM global_inventory"
+    with db.engine.begin() as connection:
+        gold = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0].gold
+    indexes = [i for i in range(4) if types[i] != 0]
+    for barrel in catalog:
+        for index in indexes:
+            if barrel.potion_type[index] == 1:
+                if gold > barrel.price:
+                    reqBarrels.append({
+                        "sku": barrel.sku,
+                        "quantity": 1
+                    })
+                    gold -= barrel.price
+                break
+    return reqBarrels
+
+
+''' For Testing
+[
+  {
+    "sku": "SMALL_RED_BARREL",
+    "ml_per_barrel": 500,
+    "potion_type": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "price": 100,
+    "quantity": 10
+  },
+  {
+    "sku": "SMALL_GREEN_BARREL",
+    "ml_per_barrel": 500,
+    "potion_type": [
+      0,
+      1,
+      0,
+      0
+    ],
+    "price": 100,
+    "quantity": 10
+  },
+  {
+    "sku": "SMALL_BLUE_BARREL",
+    "ml_per_barrel": 500,
+    "potion_type": [
+      0,
+      0,
+      1,
+      0
+    ],
+    "price": 120,
+    "quantity": 10
+  },
+  {
+    "sku": "MINI_RED_BARREL",
+    "ml_per_barrel": 200,
+    "potion_type": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "price": 60,
+    "quantity": 1
+  },
+  {
+    "sku": "MINI_GREEN_BARREL",
+    "ml_per_barrel": 200,
+    "potion_type": [
+      0,
+      1,
+      0,
+      0
+    ],
+    "price": 60,
+    "quantity": 1
+  },
+  {
+    "sku": "MINI_BLUE_BARREL",
+    "ml_per_barrel": 200,
+    "potion_type": [
+      0,
+      0,
+      1,
+      0
+    ],
+    "price": 60,
+    "quantity": 1
+  }
+]
+'''

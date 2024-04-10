@@ -49,6 +49,12 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ Send request for what you want """
     print(wholesale_catalog)
+
+    check_green = False
+    # Check if green barrel exists
+    for barrel in wholesale_catalog:
+        if barrel.sku == 'SMALL_GREEN_BARREL':
+            check_green = True
     num_green_potion = 0
     sql_to_execute = "SELECT * FROM global_inventory"
     with db.engine.begin() as connection:
@@ -57,7 +63,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         num_green_potion = result.fetchall()[0][1]
         gold = result.fetchall()[0][3]
     # Write SQL code to check how many barrels you want to buy
-    if num_green_potion < 10 and gold >= 100:
+    if num_green_potion < 10 and gold >= 100 and check_green:
         return [
             {
                 "sku": "SMALL_GREEN_BARREL",

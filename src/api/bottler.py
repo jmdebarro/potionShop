@@ -20,6 +20,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     """ """
     if len(potions_delivered) == 0:
         print("No potions delivered")
+        
     else:
         green_potions = potions_delivered[0].quantity
         sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
@@ -53,6 +54,8 @@ def get_bottle_plan():
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute))
         green_ml = result.fetchall()[0][0]
+        print(green_ml)
+
     # Break green ml into potion and leftover
     green_potions = green_ml // 100
 

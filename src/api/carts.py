@@ -117,6 +117,8 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     # carts[key] = (sku, quantity)
     # potions_bought = carts[cart_id][1]
     # gold_paid = potions_bought[cart_id][1] * 30
+
+    print(cart_checkout.payment)
     sql_to_execute = "SELECT gold FROM global_inventory"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()

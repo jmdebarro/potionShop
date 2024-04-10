@@ -30,6 +30,3 @@ def get_catalog():
             ]
     return []
 
-# Create cart, add items to cart
-# checkout = -potions, +gold
-

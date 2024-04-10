@@ -53,9 +53,9 @@ def get_bottle_plan():
     sql_to_execute = "SELECT num_green_ml, num_red_ml, num_blue_ml FROM global_inventory"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        green_ml = result[0]
-        red_ml = result[1]
-        blue_ml = result[2]
+        green_ml = result.num_green_ml
+        red_ml = result.num_red_ml
+        blue_ml = result.num_blue_ml
         print(green_ml)
 
     # Break green ml into potion and leftover
@@ -63,9 +63,8 @@ def get_bottle_plan():
     red_potions = red_ml // 100
     blue_potions = blue_ml // 100
 
-    # if green_potions > 0:
     return potionsToBottle(red_potions, green_potions, blue_potions)
-    # return []
+
 
 def potionsToBottle(red, green, blue):
     potionList = []
@@ -81,7 +80,7 @@ def potionsToBottle(red, green, blue):
                 })
     if blue > 0:
         potionList.append({
-                "potion_type": [0, 100, 100, 0],
+                "potion_type": [0, 0, 100, 0],
                 "quantity": blue,
             })
     return potionList

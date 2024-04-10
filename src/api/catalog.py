@@ -13,9 +13,8 @@ def get_catalog():
     num_green_potion = 0
     sql_to_execute = "SELECT * FROM global_inventory"
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
-        #(id, num_green_potions, num_green_ml, gold)
-        num_green_potion = result[0][1]
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
+        num_green_potion = result.num_green_potions
 
     # Hardcoding potion amount right now
     if num_green_potion > 0:

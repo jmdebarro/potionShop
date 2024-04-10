@@ -29,15 +29,15 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         sql_to_execute = "SELECT * FROM global_inventory"
         barrels_bought = []
         with db.engine.begin() as connection:
-            result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
-            current_gold = result[0][3]
-            current_ml = result[0][2]
+            result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
+            current_gold = result.gold
+            green_current_ml = result.num_green_ml
             # Iterates through barrels you want to purchase from "/plan"
             for barrel in barrels_delivered:
                 barrels_bought.append(barrel)
                 current_gold -= barrel.price
-                current_ml += barrel.ml_per_barrel
-                sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {current_ml}, gold = {current_gold}"
+                green_current_ml += barrel.ml_per_barrel
+                sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {green_current_ml}, gold = {current_gold}"
                 update = connection.execute(sqlalchemy.text(sql_to_execute))
 
         print(f"barrels delievered: {barrels_bought} order_id: {order_id}")
@@ -60,8 +60,8 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
         #(id, num_green_potions, num_green_ml, gold)
-        num_green_potion = result[1]
-        gold = result[3]
+        num_green_potion = result.num_green_potions
+        gold = result.gold
     # Write SQL code to check how many barrels you want to buy
     if num_green_potion < 10 and gold >= 100 and check_green:
         return [

@@ -121,8 +121,8 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     print(cart_checkout.payment)
     sql_to_execute = "SELECT gold FROM global_inventory"
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
-        current_gold = result[0][0]
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
+        current_gold = result.gold
         current_gold = current_gold + 30
 
     sql_to_execute = f"UPDATE global_inventory SET gold = {current_gold}"
@@ -131,8 +131,8 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
 
     sql_to_execute = f"SELECT num_green_potions FROM global_inventory"    
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
-        green_potions = result[0][0]
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
+        green_potions = result.num_green_potions
         green_potions = green_potions - 1
     sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
     with db.engine.begin() as connection:

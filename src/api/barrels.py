@@ -55,8 +55,9 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         result = connection.execute(sqlalchemy.text(sql_to_execute))
         #(id, num_green_potions, num_green_ml, gold)
         num_green_potion = result.fetchall()[0][1]
+        gold = result.fetchall()[0][3]
     # Write SQL code to check how many barrels you want to buy
-    if num_green_potion < 10:
+    if num_green_potion < 10 and gold >= 100:
         return [
             {
                 "sku": "SMALL_GREEN_BARREL",

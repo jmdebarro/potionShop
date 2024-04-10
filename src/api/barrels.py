@@ -58,10 +58,10 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     num_green_potion = 0
     sql_to_execute = "SELECT * FROM global_inventory"
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute))
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
         #(id, num_green_potions, num_green_ml, gold)
-        num_green_potion = result.fetchall()[0][1]
-        gold = result.fetchall()[0][3]
+        num_green_potion = result[1]
+        gold = result[3]
     # Write SQL code to check how many barrels you want to buy
     if num_green_potion < 10 and gold >= 100 and check_green:
         return [

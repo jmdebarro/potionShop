@@ -20,7 +20,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     """ """
     if len(potions_delivered) == 0:
         print("No potions delivered")
-        
+
     else:
         green_potions = potions_delivered[0].quantity
         sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
@@ -50,23 +50,41 @@ def get_bottle_plan():
     # Expressed in integers from 1 to 100 that must sum up to 100.
 
     # Initial logic: bottle all barrels into red potions.
-    sql_to_execute = "SELECT num_green_ml FROM global_inventory"
+    sql_to_execute = "SELECT num_green_ml, num_red_ml, num_blue_ml FROM global_inventory"
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute))
-        green_ml = result.fetchall()[0][0]
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
+        green_ml = result[0]
+        red_ml = result[1]
+        blue_ml = result[2]
         print(green_ml)
 
     # Break green ml into potion and leftover
     green_potions = green_ml // 100
+    red_potions = red_ml // 100
+    blue_potions = blue_ml // 100
 
-    if green_potions > 0:
-        return [
-                {
+    # if green_potions > 0:
+    return potionsToBottle(red_potions, green_potions, blue_potions)
+    # return []
+
+def potionsToBottle(red, green, blue):
+    potionList = []
+    if red > 0:
+        potionList.append({
+                    "potion_type": [100, 0, 0, 0],
+                    "quantity": red,
+                })
+    if green > 0:
+        potionList.append({
                     "potion_type": [0, 100, 0, 0],
-                    "quantity": green_potions,
-                }
-            ]
-    return []
+                    "quantity": green,
+                })
+    if blue > 0:
+        potionList.append({
+                "potion_type": [0, 100, 100, 0],
+                "quantity": blue,
+            })
+    return potionList
 
 if __name__ == "__main__":
     print(get_bottle_plan())

@@ -24,12 +24,12 @@ class Barrel(BaseModel):
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """Sets barrel ml and gold in db"""
     if len(barrels_delivered) == 0:
-        print("No barrels delivered")
-        
+        print("No barrels delivered")  
     else:
+        # gets current amount for each value, mls for colors
         gold, red, green, blue = getMl()
+        # Executes sql UPDATE
         buyBarrels(gold, red, green, blue, barrels_delivered)
-
         print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
 
     return "OK"
@@ -45,6 +45,7 @@ def getMl():
         red_current_ml = result.num_red_ml
         blue_current_ml = result.num_red_ml
     return gold, red_current_ml, green_current_ml,blue_current_ml
+
 
 def buyBarrels(gold, red, green, blue, barrel_list):
     '''Handles updating db ml and gold'''

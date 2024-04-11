@@ -15,6 +15,7 @@ class PotionInventory(BaseModel):
     potion_type: list[int]
     quantity: int
 
+
 @router.post("/deliver/{order_id}")
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
     """ """
@@ -22,22 +23,45 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         print("No potions delivered")
 
     else:
-        green_potions = potions_delivered[0].quantity
-        sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
+        red, green, blue = getMl()
         with db.engine.begin() as connection:
-            result = connection.execute(sqlalchemy.text(sql_to_execute))
+            for potion in potions_delivered:
+                print(f"Pre Red: {red} | Blue: {blue} | Green: {green}")
+                print(potion)
+                red -= potion.potion_type[0] * potion.quantity
+                green -= potion.potion_type[1] * potion.quantity
+                blue -= potion.potion_type[2] * potion.quantity
 
-            # get green ml
-            sql_to_execute = "SELECT num_green_ml FROM global_inventory"
-            result = connection.execute(sqlalchemy.text(sql_to_execute))
-            green_ml = result.fetchall()[0][0]
-            leftover_green = green_ml - potions_delivered[0].quantity * 100
-            sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {leftover_green}"
+                sql_to_execute = f"SELECT * FROM potions_table WHERE red = {potion.potion_type[0]} AND green = {potion.potion_type[1]} AND blue = {potion.potion_type[2]}"
+                result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
+                print(result)
+                #Check if row exists
+                if result:
+                    cur_quantity = result.quantity + potion.quantity
+                    sql_to_execute = f"UPDATE potions_table SET quantity = {cur_quantity} WHERE sku = '{result.sku}'"
+                    update = connection.execute(sqlalchemy.text(sql_to_execute))
+                else:
+                    # Not relevant until we do unique potions
+                    continue
+            # Subtract ml used for potions
+            print(f"Post Red: {red} | Blue: {blue} | Green: {green}")
+            sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {green}, num_red_ml = {red}, num_blue_ml = {blue}"
             result = connection.execute(sqlalchemy.text(sql_to_execute))
             
         print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     return "OK"
+
+def getMl():
+    '''Returns current ml for every color and gold'''
+    sql_to_execute = "SELECT * FROM global_inventory"
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
+        green_current_ml = result.num_green_ml
+        red_current_ml = result.num_red_ml
+        blue_current_ml = result.num_blue_ml
+    return red_current_ml, green_current_ml, blue_current_ml
+
 
 @router.post("/plan")
 def get_bottle_plan():
@@ -56,9 +80,8 @@ def get_bottle_plan():
         green_ml = result.num_green_ml
         red_ml = result.num_red_ml
         blue_ml = result.num_blue_ml
-        print(green_ml)
 
-    # Break green ml into potion and leftover
+    # Break ml into potion and leftover
     green_potions = green_ml // 100
     red_potions = red_ml // 100
     blue_potions = blue_ml // 100

@@ -5,10 +5,8 @@ from pydantic import BaseModel
 from src.api import auth
 from enum import Enum
 
-# Cart id variable that is incremented with every call
+# global cart id and dictionary
 cart_id = 0
-
-# dictionary for cartid and items in session
 carts = {}
 
 router = APIRouter(

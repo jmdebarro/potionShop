@@ -18,7 +18,7 @@ class PotionInventory(BaseModel):
 
 @router.post("/deliver/{order_id}")
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
-    """ """
+    """ Potion order leads to updated ml and potion quantity"""
     if len(potions_delivered) == 0:
         print("No potions delivered")
     else:

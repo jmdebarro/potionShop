@@ -34,10 +34,4 @@ def offerPotions(potions):
                 })
         i += 1
         offers += 1
-    return {
-                "sku": "GREEN_POTION",
-                "name": "green potion",
-                "quantity": 1,
-                "price": 30,
-                "potion_type": [0, 100, 0, 0]
-            }
+    return catalogList

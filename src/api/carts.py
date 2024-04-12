@@ -6,8 +6,8 @@ from src.api import auth
 from enum import Enum
 
 # global cart id and dictionary
-cart_id = 0
-carts = {}
+cart_ids = 0
+cart = {}
 
 router = APIRouter(
     prefix="/carts",
@@ -91,8 +91,9 @@ def post_visits(visit_id: int, customers: list[Customer]):
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
-    # cart_id = cart_id + 1
-    return {"cart_id": 1}
+    global cart_ids
+    cart_ids = cart_ids + 1
+    return {"cart_id": cart_ids}
 
 
 class CartItem(BaseModel):
@@ -100,8 +101,9 @@ class CartItem(BaseModel):
 
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
+    global cart
     """ """
-    # carts[cart_id] = (item_sku, cart_item.quantity)
+    cart[cart_id] = (item_sku, cart_item.quantity)
     
     return "OK"
 
@@ -111,32 +113,37 @@ class CartCheckout(BaseModel):
 
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
+    global cart
     """ """
     # carts[key] = (sku, quantity)
-    # potions_bought = carts[cart_id][1]
-    # gold_paid = potions_bought[cart_id][1] * 30
+    potions_bought = cart[cart_id][1]
+    potion_sku = cart[cart_id][0]
+    print(potion_sku)
 
     print(cart_checkout.payment)
     sql_to_execute = "SELECT gold FROM global_inventory"
     with db.engine.begin() as connection:
+        # Get gold
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
         current_gold = result.gold
-        current_gold = current_gold + 30
-
-    sql_to_execute = f"UPDATE global_inventory SET gold = {current_gold}"
-    with db.engine.begin() as connection:
-        update = connection.execute(sqlalchemy.text(sql_to_execute))
-
-    sql_to_execute = f"SELECT num_green_potions FROM global_inventory"    
-    with db.engine.begin() as connection:
+        
+        # Get potion price and quantity denoted by sku
+        sql_to_execute = f"SELECT quantity, price FROM potions_table WHERE sku = '{potion_sku}'"
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        green_potions = result.num_green_potions
-        green_potions = green_potions - 1
-    sql_to_execute = f"UPDATE global_inventory SET num_green_potions = {green_potions}"
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute))
+        potion_quantity = result.quantity
+        potion_price = result.price
+
+        # Get new total gold and reduce potion in inventory
+        new_gold = current_gold + potions_bought * potion_price
+        new_inventory = potion_quantity - potions_bought
+
+        # Update SQL database with new gold and poion amount
+        sql_to_execute = f"UPDATE global_inventory SET gold = {new_gold}"
+        update = connection.execute(sqlalchemy.text(sql_to_execute))
+        sql_to_execute = f"UPDATE potions_table SET quantity = {new_inventory} WHERE sku = '{potion_sku}'"
+        update = connection.execute(sqlalchemy.text(sql_to_execute))
         
     # Hardcoding potions bought at the moment
-    return {"total_potions_bought": 1, "total_gold_paid": 30}
+    return {"total_potions_bought": potions_bought, "total_gold_paid": potions_bought * potion_price}
 
 

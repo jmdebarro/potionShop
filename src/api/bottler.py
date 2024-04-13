@@ -22,15 +22,15 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     if len(potions_delivered) == 0:
         print("No potions delivered")
     else:
-        red, green, blue = getMl()
-        deliverPotions(red, green, blue, potions_delivered)    
+        deliverPotions(potions_delivered)    
         print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     return "OK"
 
 
-def deliverPotions(red, green, blue, potions_delivered):
+def deliverPotions(potions_delivered):
     '''Handles SQL UPDATES for potion delivery'''
+    red, green, blue = getMl()
     with db.engine.begin() as connection:
         for potion in potions_delivered:
             red -= potion.potion_type[0] * potion.quantity
@@ -53,16 +53,6 @@ def deliverPotions(red, green, blue, potions_delivered):
     result = connection.execute(sqlalchemy.text(sql_to_execute))
 
 
-def getMl():
-    '''Returns current ml for every color and gold'''
-    sql_to_execute = "SELECT * FROM global_inventory"
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        green_current_ml = result.num_green_ml
-        red_current_ml = result.num_red_ml
-        blue_current_ml = result.num_blue_ml
-    return red_current_ml, green_current_ml, blue_current_ml
-
 
 @router.post("/plan")
 def get_bottle_plan():
@@ -75,13 +65,8 @@ def get_bottle_plan():
     # Expressed in integers from 1 to 100 that must sum up to 100.
 
     # Initial logic: bottle all barrels into red potions.
-    sql_to_execute = "SELECT num_green_ml, num_red_ml, num_blue_ml FROM global_inventory"
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        green_ml = result.num_green_ml
-        red_ml = result.num_red_ml
-        blue_ml = result.num_blue_ml
 
+    red_ml, green_ml, blue_ml = getMl()
     # Break ml into potion and leftover
     green_potions = green_ml // 100
     red_potions = red_ml // 100
@@ -108,6 +93,18 @@ def potionsToBottle(red, green, blue):
                 "quantity": blue,
             })
     return potionList
+
+
+def getMl():
+    '''Returns current ml for every color and gold'''
+    sql_to_execute = "SELECT * FROM global_inventory"
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
+        green_current_ml = result.num_green_ml
+        red_current_ml = result.num_red_ml
+        blue_current_ml = result.num_blue_ml
+    return red_current_ml, green_current_ml, blue_current_ml
+
 
 if __name__ == "__main__":
     print(get_bottle_plan())

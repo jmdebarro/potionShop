@@ -52,10 +52,10 @@ def buyBarrels(gold, red, green, blue, barrel_list):
     with db.engine.begin() as connection:
         for barrel in barrel_list:
             gold -= barrel.price
-            if barrel.potion_type[0] == 1:
+            if barrel.potion_type[0] != 0:
                 # red barrel
                 red += barrel.ml_per_barrel
-            elif barrel.potion_type[1] == 1:
+            elif barrel.potion_type[1] != 0:
                 # green barrel
                 green += barrel.ml_per_barrel
             else:
@@ -99,11 +99,13 @@ def barrelsWanted(catalog, types):
     sql_to_execute = "SELECT gold FROM global_inventory"
     with db.engine.begin() as connection:
         gold = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0].gold
+
+    # Finds colors I need and then checks if barrel is of needed color
     indexes = [i for i in range(4) if types[i] != 0]
     for barrel in catalog:
         for index in indexes:
-            if barrel.potion_type[index] == 1:
-                if gold > barrel.price:
+            if barrel.potion_type[index] != 0:
+                if gold >= barrel.price:
                     reqBarrels.append({
                         "sku": barrel.sku,
                         "quantity": 1

@@ -48,9 +48,9 @@ def deliverPotions(potions_delivered):
             else:
                 # Not relevant until we do unique potions
                 continue
-    # Subtract ml used for potions
-    sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {green}, num_red_ml = {red}, num_blue_ml = {blue}"
-    result = connection.execute(sqlalchemy.text(sql_to_execute))
+        # Subtract ml used for potions
+        sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {green}, num_red_ml = {red}, num_blue_ml = {blue}"
+        result = connection.execute(sqlalchemy.text(sql_to_execute))
 
 
 

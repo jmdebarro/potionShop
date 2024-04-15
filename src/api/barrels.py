@@ -69,7 +69,6 @@ def buyBarrels(gold, red, green, blue, barrel_list):
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ Send request for what you want """
-    wholesale_catalog = wholesale_catalog[::-1]
     print(wholesale_catalog)
     colors_needed = checkStorage()
 

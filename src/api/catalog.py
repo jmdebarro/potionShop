@@ -34,4 +34,5 @@ def offerPotions(potions):
                 })
         i += 1
         offers += 1
+    print(catalogList)
     return catalogList

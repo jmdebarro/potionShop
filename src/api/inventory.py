@@ -25,7 +25,7 @@ def get_inventory():
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
         total_potions = result[0]
 
-
+    print("number_of_potions: " + total_potions + "\nml_in_barrels: " + total_ml + "\ngold: " + total_gold)
     return {"number_of_potions": total_potions, "ml_in_barrels": total_ml, "gold": total_gold}
 
 # Gets called once a day

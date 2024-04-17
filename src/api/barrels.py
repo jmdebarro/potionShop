@@ -26,42 +26,37 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     if len(barrels_delivered) == 0:
         print("No barrels delivered")  
     else:
-        # gets current amount for each value, mls for colors
-        gold, red, green, blue = getMl()
         # Executes sql UPDATE
-        buyBarrels(gold, red, green, blue, barrels_delivered)
+        buyBarrels(barrels_delivered)
         print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
 
     return "OK"
 
 
-def getMl():
-    '''Returns current ml for every color and gold'''
-    sql_to_execute = "SELECT * FROM global_inventory"
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        gold = result.gold
-        green_current_ml = result.num_green_ml
-        red_current_ml = result.num_red_ml
-        blue_current_ml = result.num_red_ml
-    return gold, red_current_ml, green_current_ml,blue_current_ml
-
-
-def buyBarrels(gold, red, green, blue, barrel_list):
+def buyBarrels(barrel_list):
     '''Handles updating db ml and gold'''
+    gold = 0
+    red = 0
+    green = 0
+    blue = 0
+    dark = 0
+
     with db.engine.begin() as connection:
         for barrel in barrel_list:
             gold -= barrel.price
             if barrel.potion_type[0] != 0:
-                # red barrel
-                red += barrel.ml_per_barrel
+                red += barrel.ml_per_barrel * barrel.quantity
             elif barrel.potion_type[1] != 0:
-                # green barrel
-                green += barrel.ml_per_barrel
+                green += barrel.ml_per_barrel * barrel.quantity
+            elif barrel.potion_type[2] != 0:
+                blue += barrel.ml_per_barrel * barrel.quantity
+            elif barrel.potion_type[3] != 0:
+                dark += barrel.ml_per_barrel * barrel.quantity
             else:
-                # blue barrel
-                blue += barrel.ml_per_barrel
-        sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {green}, gold = {gold}, num_red_ml = {red}, num_blue_ml = {blue}"
+                raise Exception("Invalid error type")
+        sql_to_execute = f"""UPDATE global_inventory SET green_ml = green_ml + {green}, 
+        gold = gold + {gold}, red_ml = red_ml + {red}, 
+        blue_ml = blue_ml + {blue}, dark_ml = dark_ml + {dark}""".replace("\n", "")
         update = connection.execute(sqlalchemy.text(sql_to_execute))
 
 
@@ -77,7 +72,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     
 def checkStorage():
     '''Checks what barrels we need'''
-    sql_to_execute = "SELECT red, green, blue, dark FROM potions_table WHERE quantity < 6"
+    sql_to_execute = "SELECT red, green, blue, dark FROM potions_table WHERE quantity < 10"
     with db.engine.begin() as connection:
         potions = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
         colors = [0, 0, 0, 0]      

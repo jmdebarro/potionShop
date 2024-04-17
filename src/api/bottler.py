@@ -49,7 +49,7 @@ def deliverPotions(potions_delivered):
                 # Not relevant until we do unique potions
                 continue
         # Subtract ml used for potions
-        sql_to_execute = f"UPDATE global_inventory SET num_green_ml = {green}, num_red_ml = {red}, num_blue_ml = {blue}"
+        sql_to_execute = f"UPDATE global_inventory SET green_ml = {green},red_ml = {red}, blue_ml = {blue}"
         result = connection.execute(sqlalchemy.text(sql_to_execute))
 
 
@@ -100,9 +100,9 @@ def getMl():
     sql_to_execute = "SELECT * FROM global_inventory"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        green_current_ml = result.num_green_ml
-        red_current_ml = result.num_red_ml
-        blue_current_ml = result.num_blue_ml
+        green_current_ml = result.green_ml
+        red_current_ml = result.red_ml
+        blue_current_ml = result.blue_ml
     return red_current_ml, green_current_ml, blue_current_ml
 
 

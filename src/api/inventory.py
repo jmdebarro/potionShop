@@ -16,9 +16,9 @@ def get_inventory():
     """ """
 
     with db.engine.begin() as connection:
-        sql_to_execute = "SELECT num_green_ml, num_blue_ml, num_red_ml, gold FROM global_inventory"
+        sql_to_execute = "SELECT green_ml, blue_ml, red_ml, dark_ml, gold FROM global_inventory"
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        total_ml = result.num_green_ml + result.num_blue_ml + result.num_red_ml
+        total_ml = result.green_ml + result.blue_ml + result.red_ml + result.dark_ml
         total_gold = result.gold
 
         sql_to_execute = "SELECT SUM(quantity) FROM potions_table"

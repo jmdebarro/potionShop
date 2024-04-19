@@ -142,7 +142,6 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         sql_to_execute = f"UPDATE potions_table SET quantity = {new_inventory} WHERE sku = '{potion_sku}'"
         update = connection.execute(sqlalchemy.text(sql_to_execute))
     
-    print(f"")
     return {"total_potions_bought": potions_bought, "total_gold_paid": potions_bought * potion_price}
 
 

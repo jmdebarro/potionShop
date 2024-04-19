@@ -30,12 +30,13 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
 
 def deliverPotions(potions_delivered):
     '''Handles SQL UPDATES for potion delivery'''
-    red, green, blue = getMl()
+    red, green, blue, dark = 0
     with db.engine.begin() as connection:
         for potion in potions_delivered:
-            red -= potion.potion_type[0] * potion.quantity
-            green -= potion.potion_type[1] * potion.quantity
-            blue -= potion.potion_type[2] * potion.quantity
+            red += potion.potion_type[0] * potion.quantity
+            green += potion.potion_type[1] * potion.quantity
+            blue += potion.potion_type[2] * potion.quantity
+            dark += potion.potion_type[3] * potion.quanity
 
             sql_to_execute = f"SELECT * FROM potions_table WHERE red = {potion.potion_type[0]} AND green = {potion.potion_type[1]} AND blue = {potion.potion_type[2]}"
             result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
@@ -64,35 +65,33 @@ def get_bottle_plan():
     # green potion to add.
     # Expressed in integers from 1 to 100 that must sum up to 100.
 
-    # Initial logic: bottle all barrels into red potions.
+    red_ml, green_ml, blue_ml, dark_ml = getMl()
 
-    red_ml, green_ml, blue_ml = getMl()
-    # Break ml into potion and leftover
-    green_potions = green_ml // 100
-    red_potions = red_ml // 100
-    blue_potions = blue_ml // 100
+    return bottlePotions(red_ml, green_ml, blue_ml, dark_ml)
 
-    return potionsToBottle(red_potions, green_potions, blue_potions)
+def bottlePotions(red, green, blue, dark):
+    '''Bottle potions'''
 
-
-def potionsToBottle(red, green, blue):
-    potionList = []
-    if red > 0:
-        potionList.append({
-                    "potion_type": [100, 0, 0, 0],
-                    "quantity": red,
+    potion_list = []
+    with db.engine.begin() as connection:
+        sql_to_execute = f"SELECT id, quantity, red, green, blue, dark FROM potions_table"
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
+        for potion in result:
+            potion_type = [potion.red, potion.green, potion.blue, potion.dark]
+            quantity = 0
+            while min(red - potion.red, green - potion.green, blue - potion.blue, dark - potion.dark) >= 0 and quantity < 4:
+                quantity += 1
+                red -= potion.red
+                blue -= potion.blue
+                green -= potion.green
+                dark -= potion.dark
+            if quantity != 0:
+                potion_list.append({
+                    "potion_type" : potion_type,
+                    "quantity": quantity
                 })
-    if green > 0:
-        potionList.append({
-                    "potion_type": [0, 100, 0, 0],
-                    "quantity": green,
-                })
-    if blue > 0:
-        potionList.append({
-                "potion_type": [0, 0, 100, 0],
-                "quantity": blue,
-            })
-    return potionList
+    print(potion_list)
+    return potion_list
 
 
 def getMl():
@@ -103,7 +102,8 @@ def getMl():
         green_current_ml = result.green_ml
         red_current_ml = result.red_ml
         blue_current_ml = result.blue_ml
-    return red_current_ml, green_current_ml, blue_current_ml
+        dark_current_ml = result.dark_ml
+    return red_current_ml, green_current_ml, blue_current_ml, dark_current_ml
 
 
 if __name__ == "__main__":

@@ -38,17 +38,13 @@ def deliverPotions(potions_delivered):
             blue += potion.potion_type[2] * potion.quantity
             dark += potion.potion_type[3] * potion.quanity
 
-            sql_to_execute = f"SELECT * FROM potions_table WHERE red = {potion.potion_type[0]} AND green = {potion.potion_type[1]} AND blue = {potion.potion_type[2]}"
+            sql_to_execute = f"SELECT * FROM potions_table WHERE red = {potion.potion_type[0]} AND green = {potion.potion_type[1]} AND blue = {potion.potion_type[2]} AND dark = {potion.potion_type[3]}"
             result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
             print(result)
-            #Check if row exists
-            if result:
-                cur_quantity = result.quantity + potion.quantity
-                sql_to_execute = f"UPDATE potions_table SET quantity = {cur_quantity} WHERE sku = '{result.sku}'"
-                update = connection.execute(sqlalchemy.text(sql_to_execute))
-            else:
-                # Not relevant until we do unique potions
-                continue
+
+            
+            sql_to_execute = f"UPDATE potions_table SET quantity = quantity + {potion.quantity} WHERE sku = '{result.sku}'"
+            update = connection.execute(sqlalchemy.text(sql_to_execute))
         # Subtract ml used for potions
         sql_to_execute = f"UPDATE global_inventory SET green_ml = {green},red_ml = {red}, blue_ml = {blue}"
         result = connection.execute(sqlalchemy.text(sql_to_execute))

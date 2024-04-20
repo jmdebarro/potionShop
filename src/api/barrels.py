@@ -23,14 +23,24 @@ class Barrel(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """Sets barrel ml and gold in db"""
-    if len(barrels_delivered) == 0:
-        print("No barrels delivered")  
-    else:
-        # Executes sql UPDATE
-        buyBarrels(barrels_delivered)
-        print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
+    try:
+        sql_to_execute = "INSERT INTO process (id, type) VALUES (:id, 'barrel')"
+        with db.engine.begin() as connection:
+            print("Before sql ex")
+            result = connection.execute(sqlalchemy.text(sql_to_execute), [{"id": order_id}])
+            print("After sql ex")
+        if len(barrels_delivered) == 0:
+            print("No barrels delivered")  
+        else:
+            # Executes sql UPDATE
+            buyBarrels(barrels_delivered)
+            print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
 
-    return "OK"
+        return "OK"
+    
+    except:
+        print(f"Order: {order_id} already processed")
+        return "OK"
 
 
 def buyBarrels(barrel_list):
@@ -65,47 +75,59 @@ def buyBarrels(barrel_list):
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ Send request for what you want """
     print(wholesale_catalog)
-    colors_needed = checkStorage()
 
-    return barrelsWanted(wholesale_catalog, colors_needed)
-
-    
-def checkStorage():
-    '''Checks what barrels we need'''
-    sql_to_execute = "SELECT red, green, blue, dark FROM potions_table WHERE quantity < 10"
-    with db.engine.begin() as connection:
-        potions = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
-        colors = [0, 0, 0, 0]      
-        for potion in potions:
-            colors[0] += potion.red
-            colors[1] += potion.green
-            colors[2] += potion.blue
-            colors[3] += potion.dark
-    return colors
+    return barrelsWanted(wholesale_catalog)
 
 
-def barrelsWanted(catalog, types):
+def barrelsWanted(catalog):
     '''Code to check for barrels and if there are sufficient funds'''
     reqBarrels = []
-    if sum(types) == 0:
-        return reqBarrels
-    
-    sql_to_execute = "SELECT gold FROM global_inventory"
+    sql_to_execute = "SELECT gold, ml_capacity, red_ml, green_ml, blue_ml, dark_ml FROM global_inventory"
     with db.engine.begin() as connection:
-        gold = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0].gold
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
+        print(result.gold)
+        gold = result.gold
+        red = result.red_ml
+        green = result.green_ml
+        blue = result.blue_ml
+        dark = result.dark_ml
+        threshold = result.ml_capacity * 10000 / 4
+        current_cap = result.ml_capacity * 10000 - red - green - blue - dark
 
-    # Finds colors I need and then checks if barrel is of needed color
-    indexes = [i for i in range(4) if types[i] != 0]
-    for barrel in catalog:
-        for index in indexes:
-            if barrel.potion_type[index] != 0:
-                if gold >= barrel.price:
-                    reqBarrels.append({
-                        "sku": barrel.sku,
-                        "quantity": 1
-                    })
-                    gold -= barrel.price
-                break
+
+    new_cat = [barrel for barrel in catalog if barrel.ml_per_barrel <= threshold and barrel.price <= gold]
+    for barrel in new_cat:
+        quantity = 0
+        if current_cap - barrel.ml_per_barrel < 0 or gold < barrel.price:
+            # Don't have capacity or gold for current barrel
+            continue
+        # Iterates through barrel listing, adding barrels to order based on quant and gold
+        elif barrel.potion_type[0] == 1:
+            while red + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity:
+                quantity += 1
+                gold -= barrel.price
+                red += barrel.ml_per_barrel
+        elif barrel.potion_type[1] == 1:
+            while green + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity:
+                quantity += 1
+                gold -= barrel.price
+                green += barrel.ml_per_barrel
+        elif barrel.potion_type[2] == 1:
+            while blue + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity:
+                quantity += 1
+                gold -= barrel.price
+                blue += barrel.ml_per_barrel
+        elif barrel.potion_type[3] == 1:
+            while dark + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity:
+                quantity += 1
+                gold -= barrel.price
+                dark += barrel.ml_per_barrel
+        if quantity > 0:
+            reqBarrels.append({
+                "sku" : barrel.sku,
+                "quantity" : quantity
+            })
+        current_cap -= barrel.ml_per_barrel * quantity
     return reqBarrels
 
 

@@ -19,11 +19,11 @@ def get_catalog():
 
 def offerPotions(potions):
     """Iterates through available potions and addes to catalog"""
-    offers, i = 0, 0
+    i = 0
     catalogList = []
     length = len(potions)
 
-    while offers < 6 and i < length:
+    while i < 6 and i < length:
         name = " ".join(potions[i].sku.split("_")).lower()
         catalogList.append({
                     "sku": potions[i].sku,
@@ -33,6 +33,5 @@ def offerPotions(potions):
                     "potion_type": [potions[i].red, potions[i].green, potions[i].blue, potions[i].dark]
                 })
         i += 1
-        offers += 1
     print(catalogList)
     return catalogList

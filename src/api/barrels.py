@@ -82,7 +82,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 def barrelsWanted(catalog):
     '''Code to check for barrels and if there are sufficient funds'''
     reqBarrels = []
-    sql_to_execute = "SELECT gold, ml_capacity, red_ml, green_ml, blue_ml, dark_ml FROM global_inventory"
+    sql_to_execute = "SELECT gold, ml_cap, red_ml, green_ml, blue_ml, dark_ml FROM global_inventory"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
         print(result.gold)
@@ -91,8 +91,8 @@ def barrelsWanted(catalog):
         green = result.green_ml
         blue = result.blue_ml
         dark = result.dark_ml
-        threshold = result.ml_capacity * 10000 / 4
-        current_cap = result.ml_capacity * 10000 - red - green - blue - dark
+        threshold = result.ml_cap * 10000 / 4
+        current_cap = result.ml_cap * 10000 - red - green - blue - dark
 
 
     new_cat = [barrel for barrel in catalog if barrel.ml_per_barrel <= threshold and barrel.price <= gold]

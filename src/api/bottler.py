@@ -36,7 +36,7 @@ def deliverPotions(potions_delivered):
             red += potion.potion_type[0] * potion.quantity
             green += potion.potion_type[1] * potion.quantity
             blue += potion.potion_type[2] * potion.quantity
-            dark += potion.potion_type[3] * potion.quanity
+            dark += potion.potion_type[3] * potion.quantity
 
             sql_to_execute = f"SELECT * FROM potions_table WHERE red = {potion.potion_type[0]} AND green = {potion.potion_type[1]} AND blue = {potion.potion_type[2]} AND dark = {potion.potion_type[3]}"
             result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]

@@ -30,7 +30,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
 
 def deliverPotions(potions_delivered):
     '''Handles SQL UPDATES for potion delivery'''
-    red, green, blue, dark = 0
+    red = green = blue = dark = 0
     with db.engine.begin() as connection:
         for potion in potions_delivered:
             red += potion.potion_type[0] * potion.quantity

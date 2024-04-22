@@ -70,7 +70,7 @@ def bottlePotions(red, green, blue, dark):
 
     potion_list = []
     with db.engine.begin() as connection:
-        sql_to_execute = f"SELECT id, quantity, red, green, blue, dark FROM potions_table"
+        sql_to_execute = f"SELECT POTION_id, quantity, red, green, blue, dark FROM potions_table"
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
         for potion in result:
             potion_type = [potion.red, potion.green, potion.blue, potion.dark]

@@ -46,7 +46,7 @@ def deliverPotions(potions_delivered):
             sql_to_execute = f"UPDATE potions_table SET quantity = quantity + {potion.quantity} WHERE sku = '{result.sku}'"
             update = connection.execute(sqlalchemy.text(sql_to_execute))
         # Subtract ml used for potions
-        sql_to_execute = f"UPDATE global_inventory SET green_ml = {green},red_ml = {red}, blue_ml = {blue}"
+        sql_to_execute = f"UPDATE global_inventory SET green_ml = green_ml - {green}, red_ml = red_ml - {red}, blue_ml = blue_ml - {blue}, dark_ml =dark_ml - {dark}"
         result = connection.execute(sqlalchemy.text(sql_to_execute))
 
 

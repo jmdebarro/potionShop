@@ -90,10 +90,28 @@ def post_visits(visit_id: int, customers: list[Customer]):
 
 @router.post("/")
 def create_cart(new_cart: Customer):
-    """ """
-    global cart_ids
-    cart_ids = cart_ids + 1
-    return {"cart_id": cart_ids}
+    """ Create new row in cart table with customer"""
+
+    with db.engine.begin() as connection:
+        try:
+            sql_to_execute = "SELECT id FROM customer WHERE name = :name AND class = :class AND level = :level"
+            result = connection.execute(sqlalchemy.text(sql_to_execute), [{"name": new_cart.customer_name, 
+                                                                           "class": new_cart.character_class,
+                                                                           "level": new_cart.level}]).fetchall()[0]
+            print(f"Result {result} When customer exists")
+        except:
+            sql_to_execute = "INSERT INTO customer (name, class, level) VALUES (:name, :class, :level) RETURNING id"
+            result = connection.execute(sqlalchemy.text(sql_to_execute), [{"name": new_cart.customer_name, 
+                                                                           "class": new_cart.character_class,
+                                                                           "level": new_cart.level}]).fetchall()[0]
+            print(f"Result {result} if customer doesn't exist")
+            
+        customer_id = result.id
+        sql_to_execute = "INSERT INTO cart (customer_id) VALUES (:id) RETURNING cart_id"
+        cart_id = connection.execute(sqlalchemy.text(sql_to_execute), [{"id": customer_id}]).fetchall()[0].cart_id
+        print(f"Final id returned after cart insert: {cart_id}")
+
+    return {"cart_id": cart_id}
 
 
 class CartItem(BaseModel):
@@ -101,9 +119,16 @@ class CartItem(BaseModel):
 
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
-    """ """
-    global cart
-    cart[cart_id] = (item_sku, cart_item.quantity)
+    """ Post items to cart_items """
+
+    print(f"Cart: {cart_id} | SKU: {item_sku} | {cart_item.quantity}")
+    sql_to_execute = "SELECT potion_id FROM potions_table WHERE sku = :sku"
+    with db.engine.begin() as connection:
+        potion_id = connection.execute(sqlalchemy.text(sql_to_execute), [{"sku": item_sku}]).fetchall()[0][0]
+        sql_to_execute = "INSERT INTO cart_items (cart_id, quantity, potion_id) VALUES (:cart_id, :quantity, :potion_id)"
+        result = connection.execute(sqlalchemy.text(sql_to_execute), [{"cart_id": cart_id,
+                                                                       "quantity": cart_item.quantity, 
+                                                                       "potion_id": potion_id}])
     
     return "OK"
 
@@ -113,35 +138,27 @@ class CartCheckout(BaseModel):
 
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
-    global cart
-    """ """
-    # carts[key] = (sku, quantity)
-    potions_bought = cart[cart_id][1]
-    potion_sku = cart[cart_id][0]
-
-    print("Potion sku:", potion_sku, "\nQuantity:", potions_bought)
-    sql_to_execute = "SELECT gold FROM global_inventory"
+    """ Retrieve all items with cart_id and sum """
+    
+    gold = 0
+    potions_bought = 0
     with db.engine.begin() as connection:
-        # Get gold
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        current_gold = result.gold
-        
-        # Get potion price and quantity denoted by sku
-        sql_to_execute = f"SELECT quantity, price FROM potions_table WHERE sku = '{potion_sku}'"
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        potion_quantity = result.quantity
-        potion_price = result.price
+        sql_to_execute = "SELECT potion_id, quantity FROM cart_items WHERE cart_id = :cart_id"
+        carts = connection.execute(sqlalchemy.text(sql_to_execute), [{"cart_id": cart_id}]).fetchall()
 
-        # Get new total gold and reduce potion in inventory
-        new_gold = current_gold + potions_bought * potion_price
-        new_inventory = potion_quantity - potions_bought
+        # Get potion price and quantity denoted by sku
+        sql_to_execute = f"UPDATE potions_table SET quantity = quantity - :quantity WHERE potion_id = :potion_id RETURNING price"
+        for purchase in carts:
+            potion_price = connection.execute(sqlalchemy.text(sql_to_execute), 
+                                              [{"quantity": purchase.quantity, "potion_id": purchase.potion_id}]).fetchall()[0][0] * purchase.quantity
+            print(potion_price)
+            gold += potion_price
+            potions_bought += purchase.quantity
 
         # Update SQL database with new gold and poion amount
-        sql_to_execute = f"UPDATE global_inventory SET gold = {new_gold}"
-        update = connection.execute(sqlalchemy.text(sql_to_execute))
-        sql_to_execute = f"UPDATE potions_table SET quantity = {new_inventory} WHERE sku = '{potion_sku}'"
-        update = connection.execute(sqlalchemy.text(sql_to_execute))
+        sql_to_execute = f"UPDATE global_inventory SET gold = gold - :gold"
+        update = connection.execute(sqlalchemy.text(sql_to_execute), [{"gold": gold}])
     
-    return {"total_potions_bought": potions_bought, "total_gold_paid": potions_bought * potion_price}
+    return {"total_potions_bought": potions_bought, "total_gold_paid": gold}
 
 

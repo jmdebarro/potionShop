@@ -85,7 +85,6 @@ def barrelsWanted(catalog):
     sql_to_execute = "SELECT gold, ml_cap, red_ml, green_ml, blue_ml, dark_ml FROM global_inventory"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        print(result.gold)
         gold = result.gold
         red = result.red_ml
         green = result.green_ml
@@ -93,6 +92,8 @@ def barrelsWanted(catalog):
         dark = result.dark_ml
         threshold = result.ml_cap * 10000 / 4
         current_cap = result.ml_cap * 10000 - red - green - blue - dark
+        print(f"Gold: {gold} | Red: {red} | Blue: {blue} | Green: {green} | Dark: {dark}")
+        print(f"Threshold: {threshold} | Current_Cap: {current_cap}")
 
 
     new_cat = [barrel for barrel in catalog if barrel.ml_per_barrel <= threshold and barrel.price <= gold]
@@ -131,6 +132,7 @@ def barrelsWanted(catalog):
                 "sku" : barrel.sku,
                 "quantity" : quantity
             })
+    print(f"\nCurrent_cap at end: {current_cap} | Total ml: {red + green + blue + dark}")
     return reqBarrels
 
 

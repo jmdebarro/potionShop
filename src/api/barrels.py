@@ -103,31 +103,34 @@ def barrelsWanted(catalog):
             continue
         # Iterates through barrel listing, adding barrels to order based on quant and gold
         elif barrel.potion_type[0] == 1:
-            while red + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity:
+            while red + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity and red + barrel.ml_per_barrel < current_cap:
                 quantity += 1
                 gold -= barrel.price
                 red += barrel.ml_per_barrel
+                current_cap -= barrel.ml_per_barrel
         elif barrel.potion_type[1] == 1:
-            while green + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity:
+            while green + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity and red + barrel.ml_per_barrel < current_cap:
                 quantity += 1
                 gold -= barrel.price
                 green += barrel.ml_per_barrel
+                current_cap -= barrel.ml_per_barrel
         elif barrel.potion_type[2] == 1:
-            while blue + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity:
+            while blue + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity and red + barrel.ml_per_barrel < current_cap:
                 quantity += 1
                 gold -= barrel.price
                 blue += barrel.ml_per_barrel
+                current_cap -= barrel.ml_per_barrel
         elif barrel.potion_type[3] == 1:
-            while dark + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity:
+            while dark + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity and red + barrel.ml_per_barrel < current_cap:
                 quantity += 1
                 gold -= barrel.price
                 dark += barrel.ml_per_barrel
+                current_cap -= barrel.ml_per_barrel
         if quantity > 0:
             reqBarrels.append({
                 "sku" : barrel.sku,
                 "quantity" : quantity
             })
-        current_cap -= barrel.ml_per_barrel * quantity
     return reqBarrels
 
 

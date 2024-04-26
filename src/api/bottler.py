@@ -19,13 +19,21 @@ class PotionInventory(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
     """ Potion order leads to updated ml and potion quantity"""
-    if len(potions_delivered) == 0:
-        print("No potions delivered")
-    else:
-        deliverPotions(potions_delivered)    
-        print(f"potions delievered: {potions_delivered} order_id: {order_id}")
+    try:    
+        sql_to_execute = "INSERT INTO process (id, type) VALUES (:id, 'potion')"
+        with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(sql_to_execute), [{"id": order_id}])
+        if len(potions_delivered) == 0:
+            print("No potions delivered")
+        else:
+            deliverPotions(potions_delivered)    
+            print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
-    return "OK"
+        return "OK"
+    except:
+        print(f"Order {order_id} already delivered")
+
+        return "OK"
 
 
 def deliverPotions(potions_delivered):
@@ -38,16 +46,16 @@ def deliverPotions(potions_delivered):
             blue += potion.potion_type[2] * potion.quantity
             dark += potion.potion_type[3] * potion.quantity
 
-            sql_to_execute = f"SELECT * FROM potions_table WHERE red = {potion.potion_type[0]} AND green = {potion.potion_type[1]} AND blue = {potion.potion_type[2]} AND dark = {potion.potion_type[3]}"
-            result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-            print(result)
+            sql_to_execute = f"SELECT potion_id FROM potions_table WHERE red = :red AND green = :green AND blue = :blue AND dark = :dark"
+            vals = [{"red": potion.potion_type[0], "green": potion.potion_type[1], "blue": potion.potion_type[2], "dark": potion.potion_type[3]}]
+            result = connection.execute(sqlalchemy.text(sql_to_execute), vals).fetchall()[0]
+            potion_id = result.potion_id
 
-            
-            sql_to_execute = f"UPDATE potions_table SET quantity = quantity + {potion.quantity} WHERE sku = '{result.sku}'"
-            update = connection.execute(sqlalchemy.text(sql_to_execute))
+            sql_to_execute = "INSERT INTO potion_ledger (potion_id, change) VALUES (:potion_id, :change)"
+            update = connection.execute(sqlalchemy.text(sql_to_execute), [{"potion_id" : potion_id, "change": potion.quantity}])
         # Subtract ml used for potions
-        sql_to_execute = f"UPDATE global_inventory SET green_ml = green_ml - {green}, red_ml = red_ml - {red}, blue_ml = blue_ml - {blue}, dark_ml =dark_ml - {dark}"
-        result = connection.execute(sqlalchemy.text(sql_to_execute))
+        sql_to_execute = "INSERT INTO ml_ledger (red, green, blue, dark) VALUES (:red, :green, :blue, :dark)"
+        result = connection.execute(sqlalchemy.text(sql_to_execute), [{"red": -1 * red, "green": -1 * green, "blue": -1 * blue, "dark": -1 * dark}])
 
 
 
@@ -70,12 +78,16 @@ def bottlePotions(red, green, blue, dark):
 
     potion_list = []
     with db.engine.begin() as connection:
-        sql_to_execute = f"SELECT POTION_id, quantity, red, green, blue, dark FROM potions_table"
+        sql_to_execute = "SELECT p.potion_id, p.red, p.green, p.blue, p.dark, SUM(pl.change) AS quantity\
+                            FROM potions_table AS p\
+                            INNER JOIN potion_ledger AS pl ON pl.potion_id = p.potion_id\
+                            GROUP BY p.potion_id;"
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
+        print(result)
         for potion in result:
             potion_type = [potion.red, potion.green, potion.blue, potion.dark]
             quantity = 0
-            while min(red - potion.red, green - potion.green, blue - potion.blue, dark - potion.dark) >= 0 and quantity < 4:
+            while min(red - potion.red, green - potion.green, blue - potion.blue, dark - potion.dark) >= 0 and quantity < 5:
                 quantity += 1
                 red -= potion.red
                 blue -= potion.blue
@@ -92,13 +104,13 @@ def bottlePotions(red, green, blue, dark):
 
 def getMl():
     '''Returns current ml for every color and gold'''
-    sql_to_execute = "SELECT * FROM global_inventory"
+    sql_to_execute = "SELECT SUM(red), SUM(green), SUM(blue), SUM(dark) FROM ml_ledger"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        green_current_ml = result.green_ml
-        red_current_ml = result.red_ml
-        blue_current_ml = result.blue_ml
-        dark_current_ml = result.dark_ml
+        red_current_ml = result[0]
+        green_current_ml = result[1]
+        blue_current_ml = result[2]
+        dark_current_ml = result[3]
     return red_current_ml, green_current_ml, blue_current_ml, dark_current_ml
 
 

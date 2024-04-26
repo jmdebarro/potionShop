@@ -147,16 +147,18 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         carts = connection.execute(sqlalchemy.text(sql_to_execute), [{"cart_id": cart_id}]).fetchall()
 
         # Get potion price and quantity denoted by sku
-        sql_to_execute = f"UPDATE potions_table SET quantity = quantity - :quantity WHERE potion_id = :potion_id RETURNING price"
+        sql_to_execute = "INSERT INTO potion_ledger (potion_id, change) VALUES (:potion_id, :change)"
         for purchase in carts:
-            potion_price = connection.execute(sqlalchemy.text(sql_to_execute), 
-                                              [{"quantity": purchase.quantity, "potion_id": purchase.potion_id}]).fetchall()[0][0] * purchase.quantity
-            print(potion_price)
-            gold += potion_price
+            insert = connection.execute(sqlalchemy.text(sql_to_execute), 
+                                              [{"change": -1 * purchase.quantity, "potion_id": purchase.potion_id}])
+            
+            sql_to_execute = "SELECT price from potions_table WHERE potion_id = :potion_id"
+            amount = connection.execute(sqlalchemy.text(sql_to_execute), [{"potion_id" : purchase.potion_id}]).fetchone()
+            gold += amount.price * purchase.quantity
             potions_bought += purchase.quantity
 
         # Update SQL database with new gold and poion amount
-        sql_to_execute = f"UPDATE global_inventory SET gold = gold - :gold"
+        sql_to_execute = "INSERT INTO gold_ledger (gold) VALUES (:gold)"
         update = connection.execute(sqlalchemy.text(sql_to_execute), [{"gold": gold}])
     
     return {"total_potions_bought": potions_bought, "total_gold_paid": gold}

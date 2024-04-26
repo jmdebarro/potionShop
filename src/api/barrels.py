@@ -26,9 +26,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     try:
         sql_to_execute = "INSERT INTO process (id, type) VALUES (:id, 'barrel')"
         with db.engine.begin() as connection:
-            print("Before sql ex")
             result = connection.execute(sqlalchemy.text(sql_to_execute), [{"id": order_id}])
-            print("After sql ex")
         if len(barrels_delivered) == 0:
             print("No barrels delivered")  
         else:
@@ -64,10 +62,9 @@ def buyBarrels(barrel_list):
                 dark += barrel.ml_per_barrel * barrel.quantity
             else:
                 raise Exception("Invalid error type")
-        sql_to_execute = f"""UPDATE global_inventory SET green_ml = green_ml + {green}, 
-        gold = gold + {gold}, red_ml = red_ml + {red}, 
-        blue_ml = blue_ml + {blue}, dark_ml = dark_ml + {dark}""".replace("\n", "")
-        update = connection.execute(sqlalchemy.text(sql_to_execute))
+        print(f"Green {green} | Red : {red} | Blue: {blue} | Dark: {dark}")
+        sql_to_execute = "INSERT INTO ml_ledger (green, red, blue, dark) VALUES (:green, :red, :blue, :dark)"
+        update = connection.execute(sqlalchemy.text(sql_to_execute), [{"green": green, "red": red, "blue": blue, "dark": dark}])
 
 
 # Gets called every other tick
@@ -82,16 +79,22 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 def barrelsWanted(catalog):
     '''Code to check for barrels and if there are sufficient funds'''
     reqBarrels = []
-    sql_to_execute = "SELECT gold, ml_cap, red_ml, green_ml, blue_ml, dark_ml FROM global_inventory"
+    #sql_to_execute = "SELECT gold, ml_cap, red_ml, green_ml, blue_ml, dark_ml FROM global_inventory"
+    sql_to_execute = "SELECT SUM(red), SUM(green), SUM(blue), SUM(dark) FROM ml_ledger"
     with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
-        gold = result.gold
-        red = result.red_ml
-        green = result.green_ml
-        blue = result.blue_ml
-        dark = result.dark_ml
-        threshold = result.ml_cap * 10000 / 4
-        current_cap = result.ml_cap * 10000 - red - green - blue - dark
+        ml = connection.execute(sqlalchemy.text(sql_to_execute)).fetchone()
+        #(red, green, blue, dark)
+        red = ml[0]
+        green = ml[1]
+        blue = ml[2]
+        dark = ml[3]
+
+        sql_to_execute = "SELECT SUM(gold), SUM(ml_cap) FROM gold_ledger"
+        result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchone()
+        #(gold, ml_cap, potion_cap)
+        gold = result[0]
+        threshold = result[1] * 10000 / 4
+        current_cap = result[1] * 10000 - red - green - blue - dark
         print(f"Gold: {gold} | Red: {red} | Blue: {blue} | Green: {green} | Dark: {dark}")
         print(f"Threshold: {threshold} | Current_Cap: {current_cap}")
 
@@ -102,7 +105,7 @@ def barrelsWanted(catalog):
         if current_cap - barrel.ml_per_barrel < 0 or gold < barrel.price:
             # Don't have capacity or gold for current barrel
             continue
-        # Iterates through barrel listing, adding barrels to order based on quant and gold
+        # Iterates through barrel listing, adding barrels to order based on ml availability and gold
         elif barrel.potion_type[0] == 1:
             while red + barrel.ml_per_barrel <= threshold and gold >= barrel.price and quantity < barrel.quantity and red + barrel.ml_per_barrel < current_cap:
                 quantity += 1

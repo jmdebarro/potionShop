@@ -65,6 +65,8 @@ def buyBarrels(barrel_list):
         print(f"Green {green} | Red : {red} | Blue: {blue} | Dark: {dark}")
         sql_to_execute = "INSERT INTO ml_ledger (green, red, blue, dark) VALUES (:green, :red, :blue, :dark)"
         update = connection.execute(sqlalchemy.text(sql_to_execute), [{"green": green, "red": red, "blue": blue, "dark": dark}])
+        sql_to_execute = "INSERT INTO gold_ledger (gold) VALUES (:gold)"
+        update = connection.execute(sqlalchemy.text(sql_to_execute), [{"gold": gold}])
 
 
 # Gets called every other tick

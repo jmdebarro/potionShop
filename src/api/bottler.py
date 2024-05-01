@@ -78,9 +78,9 @@ def bottlePotions(red, green, blue, dark):
 
     potion_list = []
     with db.engine.begin() as connection:
-        sql_to_execute = "SELECT p.potion_id, p.red, p.green, p.blue, p.dark, SUM(pl.change) AS quantity\
+        sql_to_execute = "SELECT p.potion_id, p.red, p.green, p.blue, p.dark, COALESCE(SUM(pl.change), 0) AS quantity\
                             FROM potions_table AS p\
-                            INNER JOIN potion_ledger AS pl ON pl.potion_id = p.potion_id\
+                            LEFT JOIN potion_ledger AS pl ON pl.potion_id = p.potion_id\
                             GROUP BY p.potion_id;"
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()
         print(result)

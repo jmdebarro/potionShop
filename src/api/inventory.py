@@ -16,15 +16,15 @@ def get_inventory():
     """ """
 
     with db.engine.begin() as connection:
-        sql_to_execute = "SELECT SUM(red), SUM(green), SUM(blue), SUM(dark) FROM ml_ledger"
+        sql_to_execute = "SELECT COALESCE(SUM(red), 0) , COALESCE(SUM(green), 0) , COALESCE(SUM(blue), 0) , COALESCE(SUM(dark), 0)  FROM ml_ledger"
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
         total_ml = sum(result)
 
-        sql_to_execute = "SELECT SUM(change) FROM potion_ledger"
+        sql_to_execute = "SELECT COALESCE(SUM(change), 0)  FROM potion_ledger"
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
         total_potions = result[0]
 
-        sql_to_execute = "SELECT SUM(gold) FROM gold_ledger"
+        sql_to_execute = "SELECT COALESCE(SUM(gold), 0)  FROM gold_ledger"
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
         total_gold = result[0]
 

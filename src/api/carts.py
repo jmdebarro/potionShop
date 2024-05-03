@@ -58,18 +58,74 @@ def search_orders(
     time is 5 total line items.
     """
 
+    with db.engine.begin() as connection:
+
+        try:
+            search_page = int(search_page)
+        except:
+            search_page = 0
+
+
+        sort_cl = db.orders.c.time
+        if sort_col == search_sort_options.customer_name:
+            sort_cl = db.orders.c.name
+        elif sort_col == search_sort_options.item_sku:
+            sort_cl = db.orders.c.item
+        elif sort_col == search_sort_options.line_item_total:
+            sort_cl = db.orders.c.gold
+
+
+        order_by = sqlalchemy.desc(sort_cl)
+        if sort_order == search_sort_order.asc:
+            order_by = sqlalchemy.asc(sort_cl)
+
+
+        stmt = (
+            sqlalchemy.select(
+                db.orders.c.name,
+                db.orders.c.item,
+                db.orders.c.gold,
+                db.orders.c.time
+            )
+            .limit(5)
+            .offset(search_page * 5)
+            .order_by(order_by, sort_cl)
+        )
+
+        if customer_name != "":
+            stmt = stmt.where(db.orders.c.name.ilike(f"%{customer_name}%"))
+        if potion_sku != "":
+            stmt = stmt.where(db.orders.c.item.ilike(f"%{potion_sku}%"))
+
+
+        with db.engine.connect() as conn:
+            result = conn.execute(stmt)
+            fields = []
+            for row in result:
+                fields.append(
+                    {
+                        "line_item_id": 1,
+                        "item_sku": row.item,
+                        "customer_name": row.name,
+                        "line_item_total": row.gold,
+                        "timestamp": "row.timestamptz",
+                    }
+                )
+
+    if search_page < 5:
+        next_pg = str(search_page + 1)
+    else:
+        next_pg = ""
+
+    if search_page > 0:
+        prev_pg = str(search_page - 1)
+    else:
+        prev_pg = ""
+
     return {
-        "previous": "",
-        "next": "",
-        "results": [
-            {
-                "line_item_id": 1,
-                "item_sku": "1 oblivion potion",
-                "customer_name": "Scaramouche",
-                "line_item_total": 50,
-                "timestamp": "2021-01-01T00:00:00Z",
-            }
-        ],
+        "previous": prev_pg,
+        "next": next_pg,
+        "results": fields,
     }
 
 

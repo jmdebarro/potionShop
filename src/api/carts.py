@@ -108,7 +108,7 @@ def search_orders(
                         "item_sku": row.item,
                         "customer_name": row.name,
                         "line_item_total": row.gold,
-                        "timestamp": "row.timestamptz",
+                        "timestamp": row[3],
                     }
                 )
 
@@ -117,7 +117,7 @@ def search_orders(
     else:
         next_pg = ""
 
-    if search_page > 0:
+    if search_page > 0 :
         prev_pg = str(search_page - 1)
     else:
         prev_pg = ""

@@ -104,12 +104,12 @@ def search_orders(
         total_stmt = total_stmt.where(db.orders.c.name.ilike(f"%{customer_name}%"))
     if potion_sku != "":
         stmt = stmt.where(db.orders.c.item.ilike(f"%{potion_sku}%"))
-        total_stmt = total_stmt.where(db.orders.c.name.ilike(f"%{customer_name}%"))
+        total_stmt = total_stmt.where(db.orders.c.name.ilike(f"%{potion_sku}%"))
 
 
     with db.engine.connect() as conn:
-        result = conn.execute(stmt)
         length = len(conn.execute(total_stmt).fetchall())
+        result = conn.execute(stmt)
         fields = []
         for row in result:
             fields.append(
@@ -122,7 +122,8 @@ def search_orders(
                 }
             )
 
-    if search_page < 5 and ((search_page * 5) + 5) < length:
+    
+    if search_page < 5 and ((search_page + 1) * 5) > length:
         next_pg = str(search_page + 1)
     else:
         next_pg = ""
@@ -132,8 +133,7 @@ def search_orders(
     else:
         prev_pg = ""
 
-        print(f"previous page: {prev_pg}")
-        print(f"Next page {next_pg}")
+    print(f"Search page {search_page} | Next page {next_pg} | Prev page {prev_pg} | Total length {length}")
 
     return {
         "previous": prev_pg,

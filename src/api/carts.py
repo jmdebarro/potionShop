@@ -58,72 +58,82 @@ def search_orders(
     time is 5 total line items.
     """
 
-    with db.engine.begin() as connection:
 
-        if search_page == "":
-            search_page = 0
-        else:
-            search_page = int(search_page)
-
-
-        sort_cl = db.orders.c.time
-        if sort_col == search_sort_options.customer_name:
-            sort_cl = db.orders.c.name
-        elif sort_col == search_sort_options.item_sku:
-            sort_cl = db.orders.c.item
-        elif sort_col == search_sort_options.line_item_total:
-            sort_cl = db.orders.c.gold
+    if search_page == "":
+        search_page = 0
+    else:
+        search_page = int(search_page)
 
 
-        order_by = sqlalchemy.desc(sort_cl)
-        if sort_order == search_sort_order.asc:
-            order_by = sqlalchemy.asc(sort_cl)
+    sort_cl = db.orders.c.time
+    if sort_col == search_sort_options.customer_name:
+        sort_cl = db.orders.c.name
+    elif sort_col == search_sort_options.item_sku:
+        sort_cl = db.orders.c.item
+    elif sort_col == search_sort_options.line_item_total:
+        sort_cl = db.orders.c.gold
 
 
-        stmt = (
-            sqlalchemy.select(
-                db.orders.c.name,
-                db.orders.c.item,
-                db.orders.c.gold,
-                db.orders.c.time
-            )
-            .limit(5)
-            .offset(search_page * 5)
-            .order_by(order_by, sort_cl)
+    order_by = sqlalchemy.desc(sort_cl)
+    if sort_order == search_sort_order.asc:
+        order_by = sqlalchemy.asc(sort_cl)
+    
+    total_stmt = (
+        sqlalchemy.select(
+            db.orders.c.name,
+            db.orders.c.item,
+            db.orders.c.gold,
+            db.orders.c.time
         )
+    )
 
-        if customer_name != "":
-            stmt = stmt.where(db.orders.c.name.ilike(f"%{customer_name}%"))
-        if potion_sku != "":
-            stmt = stmt.where(db.orders.c.item.ilike(f"%{potion_sku}%"))
+    stmt = (
+        sqlalchemy.select(
+            db.orders.c.name,
+            db.orders.c.item,
+            db.orders.c.gold,
+            db.orders.c.time
+        )
+        .limit(5)
+        .offset(search_page * 5)
+        .order_by(order_by, sort_cl)
+    )
+
+    if customer_name != "":
+        stmt = stmt.where(db.orders.c.name.ilike(f"%{customer_name}%"))
+        total_stmt = total_stmt.where(db.orders.c.name.ilike(f"%{customer_name}%"))
+    if potion_sku != "":
+        stmt = stmt.where(db.orders.c.item.ilike(f"%{potion_sku}%"))
+        total_stmt = total_stmt.where(db.orders.c.name.ilike(f"%{customer_name}%"))
 
 
-        with db.engine.connect() as conn:
-            result = conn.execute(stmt)
-            fields = []
-            for row in result:
-                fields.append(
-                    {
-                        "line_item_id": 1,
-                        "item_sku": row.item,
-                        "customer_name": row.name,
-                        "line_item_total": row.gold,
-                        "timestamp": row[3],
-                    }
-                )
+    with db.engine.connect() as conn:
+        result = conn.execute(stmt)
+        length = len(conn.execute(total_stmt).fetchall())
+        fields = []
+        for row in result:
+            fields.append(
+                {
+                    "line_item_id": 1,
+                    "item_sku": row.item,
+                    "customer_name": row.name,
+                    "line_item_total": row.gold,
+                    "timestamp": row[3],
+                }
+            )
 
-    if search_page < 5:
+    if search_page < 5 and (length / 5) - 1 > search_page:
         next_pg = str(search_page + 1)
     else:
         next_pg = ""
 
-    if search_page > 0 :
+    if search_page > 0:
         prev_pg = str(search_page - 1)
     else:
         prev_pg = ""
 
         print(f"previous page: {prev_pg}")
-        print(f"NExt page {next_pg}")
+        print(f"Next page {next_pg}")
 
     return {
         "previous": prev_pg,

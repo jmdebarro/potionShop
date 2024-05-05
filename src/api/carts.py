@@ -122,7 +122,7 @@ def search_orders(
                 }
             )
 
-    if search_page < 5 and (length / 5) - 1 > search_page:
+    if search_page < 5 and ((search_page * 5) + 5) > length:
         next_pg = str(search_page + 1)
     else:
         next_pg = ""

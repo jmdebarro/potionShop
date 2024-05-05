@@ -104,7 +104,7 @@ def search_orders(
         total_stmt = total_stmt.where(db.orders.c.name.ilike(f"%{customer_name}%"))
     if potion_sku != "":
         stmt = stmt.where(db.orders.c.item.ilike(f"%{potion_sku}%"))
-        total_stmt = total_stmt.where(db.orders.c.name.ilike(f"%{potion_sku}%"))
+        total_stmt = total_stmt.where(db.orders.c.item.ilike(f"%{potion_sku}%"))
 
 
     with db.engine.connect() as conn:

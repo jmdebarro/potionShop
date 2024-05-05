@@ -122,6 +122,9 @@ def search_orders(
     else:
         prev_pg = ""
 
+        print(f"previous page: {prev_pg}")
+        print(f"NExt page {next_pg}")
+
     return {
         "previous": prev_pg,
         "next": next_pg,

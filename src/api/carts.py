@@ -60,10 +60,10 @@ def search_orders(
 
     with db.engine.begin() as connection:
 
-        try:
-            search_page = int(search_page)
-        except:
+        if search_page == "":
             search_page = 0
+        else:
+            search_page = int(search_page)
 
 
         sort_cl = db.orders.c.time

@@ -78,7 +78,7 @@ def bottlePotions(red, green, blue, dark):
 
     potion_list = []
     with db.engine.begin() as connection:
-        sql_to_execute = "SELECT p.potion_id, p.red, p.green, p.blue, p.dark, COALESCE(SUM(pl.change), 0) AS quantity\
+        sql_to_execute = "SELECT p.potion_id, COALESCE(p.red, 0), COALESCE(p.green, 0), COALESCE(p.blue, 0), (COALESCE(p.dark, 0)), COALESCE(SUM(pl.change), 0) AS quantity\
                             FROM potions_table AS p\
                             LEFT JOIN potion_ledger AS pl ON pl.potion_id = p.potion_id\
                             GROUP BY p.potion_id;"
@@ -104,7 +104,7 @@ def bottlePotions(red, green, blue, dark):
 
 def getMl():
     '''Returns current ml for every color and gold'''
-    sql_to_execute = "SELECT SUM(red), SUM(green), SUM(blue), SUM(dark) FROM ml_ledger"
+    sql_to_execute = "SELECT COALESCE(SUM(red), 0), SELECT COALESCE(SUM(green), 0), SELECT COALESCE(SUM(blue), 0), SELECT COALESCE(SUM(dark), 0) FROM ml_ledger"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
         red_current_ml = result[0]

@@ -82,7 +82,7 @@ def barrelsWanted(catalog):
     '''Code to check for barrels and if there are sufficient funds'''
     reqBarrels = []
     #sql_to_execute = "SELECT gold, ml_cap, red_ml, green_ml, blue_ml, dark_ml FROM global_inventory"
-    sql_to_execute = "SELECT SUM(red), SUM(green), SUM(blue), SUM(dark) FROM ml_ledger"
+    sql_to_execute = "SELECT COALESCE(SUM(red), 0), COALESCE(SUM(green), 0), COALESCE(SUM(blue), 0), COALESCE(SUM(dark), 0) FROM ml_ledger"
     with db.engine.begin() as connection:
         ml = connection.execute(sqlalchemy.text(sql_to_execute)).fetchone()
         #(red, green, blue, dark)

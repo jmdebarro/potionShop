@@ -104,7 +104,7 @@ def bottlePotions(red, green, blue, dark):
 
 def getMl():
     '''Returns current ml for every color and gold'''
-    sql_to_execute = "SELECT COALESCE(SUM(red), 0), SELECT COALESCE(SUM(green), 0), SELECT COALESCE(SUM(blue), 0), SELECT COALESCE(SUM(dark), 0) FROM ml_ledger"
+    sql_to_execute = "SELECT COALESCE(SUM(red), 0), COALESCE(SUM(green), 0), COALESCE(SUM(blue), 0), COALESCE(SUM(dark), 0) FROM ml_ledger"
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute)).fetchall()[0]
         red_current_ml = result[0]

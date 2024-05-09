@@ -78,7 +78,7 @@ def bottlePotions(red, green, blue, dark):
 
     potion_list = []
     with db.engine.begin() as connection:
-        sql_to_execute = "SELECT p.potion_id, COALESCE(p.red, 0), COALESCE(p.green, 0), COALESCE(p.blue, 0), COALESCE(p.dark, 0), COALESCE(SUM(pl.change), 0) AS quantity\
+        sql_to_execute = "SELECT p.potion_id, COALESCE(p.red, 0) AS red, COALESCE(p.green, 0) AS green, COALESCE(p.blue, 0) AS blue, COALESCE(p.dark, 0) AS dark, COALESCE(SUM(pl.change), 0) AS quantity\
                             FROM potions_table AS p\
                             LEFT JOIN potion_ledger AS pl ON pl.potion_id = p.potion_id\
                             GROUP BY p.potion_id;"
